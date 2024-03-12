@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  go-grpc-mysql:
+    container_name: go-grpc-mysql
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecom
+    volumes:
+      - ./mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
