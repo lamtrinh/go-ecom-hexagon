@@ -8,7 +8,10 @@ require (
 	gorm.io/gorm v1.25.7
 )
 
-require google.golang.org/protobuf v1.33.0 // indirect
+require (
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
+)
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
