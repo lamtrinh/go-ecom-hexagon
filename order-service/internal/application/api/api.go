@@ -1,13 +1,11 @@
 package api
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/application/domain"
 	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/ports"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -31,8 +29,7 @@ func (a *Application) PlaceOrder(order domain.Order) (domain.Order, error) {
 
 	paymentErr := a.payment.Charge(&order)
 	if paymentErr != nil {
-		st, _ := status.FromError(paymentErr)
-		fmt.Printf("%+v\n", st.Details())
+		st := status.Convert(paymentErr)
 		var allErrors []string
 		for _, detail := range st.Details() {
 			switch t := detail.(type) {
@@ -49,9 +46,9 @@ func (a *Application) PlaceOrder(order domain.Order) (domain.Order, error) {
 		}
 		badReq := &errdetails.BadRequest{}
 		badReq.FieldViolations = append(badReq.FieldViolations, fieldErr)
-		orderStatus := status.New(codes.InvalidArgument, "order creation failed")
+		orderStatus := status.New(400, "order creation failed")
 		statusWithDetail, _ := orderStatus.WithDetails(badReq)
-		
+
 		return domain.Order{}, statusWithDetail.Err()
 	}
 
