@@ -2,6 +2,7 @@ package payment
 
 import (
 	"context"
+	"time"
 
 	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/application/domain"
 
@@ -30,7 +31,8 @@ func NewAdapter(connection string) (*Adapter, error) {
 }
 
 func (a Adapter) Charge(order *domain.Order) error {
-	_, err := a.payment.Create(context.Background(), &payment.CreatePaymentRequest{
+	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
+	_, err := a.payment.Create(ctx, &payment.CreatePaymentRequest{
 		UserId:     order.CustomerID,
 		OrderId:    order.ID,
 		TotalPrice: order.TotalPrice(),
