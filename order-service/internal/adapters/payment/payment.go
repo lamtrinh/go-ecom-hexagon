@@ -25,6 +25,7 @@ func NewAdapter(connection string) (*Adapter, error) {
 		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(3*time.Second)),
 	)))
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
 	conn, err := grpc.Dial(connection, opts...)
 	if err != nil {
 		return nil, err
