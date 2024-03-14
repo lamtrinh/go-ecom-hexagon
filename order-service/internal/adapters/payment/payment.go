@@ -2,9 +2,11 @@ package payment
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/application/domain"
+	"github.com/sony/gobreaker"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/lamtrinh/ecom-proto/go/payment"
@@ -47,4 +49,36 @@ func (a Adapter) Charge(order *domain.Order) error {
 	})
 
 	return err
+}
+
+func CircuitBreakerClientInterceptor(cb *gobreaker.CircuitBreaker) grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		_, cbErr := cb.Execute(func() (interface{}, error) {
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			if err != nil {
+				return nil, err
+			}
+
+			return nil, nil
+		})
+
+		return cbErr
+	}
+}
+
+func NewCircuitBreakerClientInterceptor() grpc.DialOption {
+	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		Name:        "payment breaker",
+		MaxRequests: 3,
+		Timeout:     4,
+		ReadyToTrip: func(counts gobreaker.Counts) bool {
+			failureRatio := float64(counts.TotalFailures) / float64(counts.TotalSuccesses)
+			return failureRatio >= 0.6
+		},
+		OnStateChange: func(name string, from, to gobreaker.State) {
+			log.Printf("circuit breaker: %s, changed from %v to %v", name, from, to)
+		},
+	})
+
+	return grpc.WithUnaryInterceptor(CircuitBreakerClientInterceptor(cb))
 }

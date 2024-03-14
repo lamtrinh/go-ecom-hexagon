@@ -10,6 +10,7 @@ require (
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
+	github.com/sony/gobreaker v0.5.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
 
