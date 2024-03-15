@@ -6,6 +6,10 @@ import (
 	"strconv"
 )
 
+func GetCertDir() string {
+	return getEnv("CERT_DIR")
+}
+
 func GetEnv() string {
 	return getEnv("ENV")
 }

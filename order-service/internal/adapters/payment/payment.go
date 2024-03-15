@@ -2,17 +2,23 @@ package payment
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
 	"log"
+	"os"
 	"time"
 
+	"github.com/lamtrinh/go-ecom-hexagon/order-service/config"
 	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/application/domain"
 	"github.com/sony/gobreaker"
 
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+
 	"github.com/lamtrinh/ecom-proto/go/payment"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 )
 
 type Adapter struct {
@@ -26,7 +32,13 @@ func NewAdapter(connection string) (*Adapter, error) {
 		grpc_retry.WithMax(3),
 		grpc_retry.WithBackoff(grpc_retry.BackoffLinear(3*time.Second)),
 	)))
-	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	tlsCredentials, tlsErr := getTLSCredentials()
+	if tlsErr != nil {
+		log.Fatalf("failed to get tls credentials, err: %v", tlsErr)
+	}
+
+	opts = append(opts, grpc.WithTransportCredentials(tlsCredentials))
 
 	conn, err := grpc.Dial(connection, opts...)
 	if err != nil {
@@ -40,9 +52,35 @@ func NewAdapter(connection string) (*Adapter, error) {
 	}, nil
 }
 
+func getTLSCredentials() (credentials.TransportCredentials, error) {
+	certDir := config.GetCertDir()
+
+	cert, certErr := tls.LoadX509KeyPair(certDir+"/order-cert.pem", certDir+"/order-key.pem")
+	if certErr != nil {
+		return nil, fmt.Errorf("failed to load cert")
+	}
+
+	certPool := x509.NewCertPool()
+	caCert, caCertErr := os.ReadFile(certDir + "/ca-cert.pem")
+
+	if caCertErr != nil {
+		return nil, fmt.Errorf("failed to read ca cert")
+	}
+
+	if ok := certPool.AppendCertsFromPEM(caCert); !ok {
+		return nil, fmt.Errorf("failed to append ca cert")
+	}
+
+	return credentials.NewTLS(&tls.Config{
+		ServerName:   "*.microservices.dev",
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      certPool,
+	}), nil
+}
+
 func (a Adapter) Charge(order *domain.Order) error {
-	// ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	_, err := a.payment.Create(context.TODO(), &payment.CreatePaymentRequest{
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	_, err := a.payment.Create(ctx, &payment.CreatePaymentRequest{
 		UserId:     order.CustomerID,
 		OrderId:    order.ID,
 		TotalPrice: order.TotalPrice(),

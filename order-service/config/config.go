@@ -6,6 +6,10 @@ import (
 	"strconv"
 )
 
+func GetCertDir() string {
+	return getEnv("CERT_DIR")
+}
+
 func GetPaymentURL() string {
 	return getEnv("PAYMENT_URL")
 }
