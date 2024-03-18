@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/application/domain"
+	"github.com/lamtrinh/go-ecom-hexagon/order-service/internal/ports"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -12,32 +13,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type mockedPayment struct {
-	mock.Mock
-}
-
-func (p *mockedPayment) Charge(order *domain.Order) error {
-	args := p.Called(order)
-	return args.Error(0)
-}
-
-type mockedDb struct {
-	mock.Mock
-}
-
-func (d *mockedDb) Save(order *domain.Order) error {
-	args := d.Called(order)
-	return args.Error(0)
-}
-
-func (d *mockedDb) Get(id string) (domain.Order, error) {
-	args := d.Called(id)
-	return args.Get(0).(domain.Order), args.Error(1)
-}
-
 func Test_Should_Place_Order(t *testing.T) {
-	payment := new(mockedPayment)
-	db := new(mockedDb)
+	payment := ports.NewMockPaymentPort(t)
+	db := ports.NewMockDBPort(t)
 	payment.On("Charge", mock.Anything).Return(nil)
 	db.On("Save", mock.Anything).Return(nil)
 
@@ -57,9 +35,8 @@ func Test_Should_Place_Order(t *testing.T) {
 }
 
 func Test_Should_Return_Error_When_Db_Fail(t *testing.T) {
-	payment := new(mockedPayment)
-	db := new(mockedDb)
-	payment.On("Charge", mock.Anything).Return(nil)
+	payment := ports.NewMockPaymentPort(t)
+	db := ports.NewMockDBPort(t)
 	db.On("Save", mock.Anything).Return(errors.New("connection error"))
 
 	application := NewApplication(db, payment)
@@ -78,8 +55,8 @@ func Test_Should_Return_Error_When_Db_Fail(t *testing.T) {
 }
 
 func Test_Should_Return_Error_When_Payment_Fail(t *testing.T) {
-	payment := new(mockedPayment)
-	db := new(mockedDb)
+	payment := ports.NewMockPaymentPort(t)
+	db := ports.NewMockDBPort(t)
 	payment.On("Charge", mock.Anything).Return(errors.New("insufficient balance"))
 	db.On("Save", mock.Anything).Return(nil)
 
