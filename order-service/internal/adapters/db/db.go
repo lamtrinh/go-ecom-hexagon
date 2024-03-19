@@ -44,7 +44,7 @@ func NewAdapter(connection string) (*Adapter, error) {
 	}, nil
 }
 
-func (a Adapter) Get(id string) (domain.Order, error) {
+func (a Adapter) Get(id int32) (domain.Order, error) {
 	var orderModel Order
 	res := a.db.First(&orderModel, id)
 	var orderItems []domain.OrderItem
