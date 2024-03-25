@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  e2e-mysql:
+    container_name: e2e-mysql
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - "./init.sql:/docker-entrypoint-initdb.d/init.sql"
+    healthcheck:
+      test:
+        ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+  payment-service:
+    depends_on:
+      e2e-mysql:
+        condition: service_healthy
+    build: ../../payment-service/
+    environment:
+      ENV: development
+      PORT: 3001
+      DATABASE_URL: root:root@tcp(e2e-mysql:3306)/ecom?charset=utf8mb4&parseTime=True&loc=Local
+  order-service:
+    depends_on:
+      e2e-mysql:
+        condition: service_healthy
+    build: ../../order-service/
+    ports:
+      - "3000:3000"
+    environment:
+      ENV: development
+      PORT: 3000
+      DATABASE_URL: root:root@tcp(e2e-mysql:3306)/ecom?charset=utf8mb4&parseTime=True&loc=Local
+      PAYMENT_URL: payment-service:3001
