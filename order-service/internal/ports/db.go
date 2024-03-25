@@ -4,6 +4,6 @@ import "github.com/lamtrinh/go-ecom-hexagon/order-service/internal/application/d
 
 //go:generate mockery --name DBPort
 type DBPort interface {
-	Get(string) (domain.Order, error)
+	Get(int32) (domain.Order, error)
 	Save(*domain.Order) error
 }

@@ -46,7 +46,7 @@ func NewAdapter(connection string) (*Adapter, error) {
 
 func (a Adapter) Get(id int32) (domain.Order, error) {
 	var orderModel Order
-	res := a.db.First(&orderModel, id)
+	res := a.db.Preload("OrderItems").First(&orderModel, id)
 	var orderItems []domain.OrderItem
 	for _, orderItem := range orderModel.OrderItems {
 		orderItems = append(orderItems, domain.OrderItem{

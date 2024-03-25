@@ -28,3 +28,21 @@ func (a Adapter) Create(ctx context.Context, request *order.CreateOrderRequest) 
 		OrderId: createdOrder.ID,
 	}, nil
 }
+
+func (a Adapter) Get(ctx context.Context, request *order.GetOrderRequest) (*order.GetOrderResponse, error) {
+	result, err := a.api.GetOrder(request.OrderId)
+	var orderItems []*order.OrderItem
+	for _, orderItem := range result.OrderItems {
+		orderItems = append(orderItems, &order.OrderItem{
+			ProductCode: orderItem.ProductCode,
+			Quantity:    orderItem.Quantity,
+			UnitPrice:   orderItem.UnitPrice,
+		})
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &order.GetOrderResponse{UserId: result.CustomerID, OrderItems: orderItems}, nil
+}
