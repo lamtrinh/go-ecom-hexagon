@@ -12,6 +12,34 @@ type MockAPIPort struct {
 	mock.Mock
 }
 
+// GetOrder provides a mock function with given fields: _a0
+func (_m *MockAPIPort) GetOrder(_a0 int32) (domain.Order, error) {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetOrder")
+	}
+
+	var r0 domain.Order
+	var r1 error
+	if rf, ok := ret.Get(0).(func(int32) (domain.Order, error)); ok {
+		return rf(_a0)
+	}
+	if rf, ok := ret.Get(0).(func(int32) domain.Order); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(domain.Order)
+	}
+
+	if rf, ok := ret.Get(1).(func(int32) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PlaceOrder provides a mock function with given fields: _a0
 func (_m *MockAPIPort) PlaceOrder(_a0 domain.Order) (domain.Order, error) {
 	ret := _m.Called(_a0)
